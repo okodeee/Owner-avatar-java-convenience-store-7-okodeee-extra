@@ -21,24 +21,19 @@ public class Products {
                     int quantity = Integer.parseInt(parts[2].trim());
                     String promotion = parts[3].trim();
 
+                    Product product;
                     if (promotion.equals("null"))
                     {
-                        Product product = new Product(name, price, quantity);
+                        product = new Product(name, price, quantity);
                         products.add(product);
                         continue;
                     }
-                    Product product = new Product(name, price, quantity, promotion);
+                    product = new Product(name, price, quantity, promotion);
                     products.add(product);
                 }
             }
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());
-        }
-    }
-
-    public void displayProducts() {
-        for (Product product : products) {
-            System.out.println(product);
         }
     }
 
