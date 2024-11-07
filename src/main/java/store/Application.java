@@ -1,5 +1,6 @@
 package store;
 
+import store.Model.Order;
 import store.Model.Products;
 import store.View.OutputView;
 
@@ -11,5 +12,8 @@ public class Application {
         System.out.println("안녕하세요. W편의점입니다.\n현재 보유하고 있는 상품입니다.\n");
         OutputView outputView = new OutputView();
         outputView.printProducts(products.getProducts());
+
+        Order order = new Order();
+        order.receiveOrder();
     }
 }
