@@ -8,5 +8,6 @@ public class OutputView {
         for (Product product : products) {
             System.out.println(product);
         }
+        System.out.println();
     }
 }
