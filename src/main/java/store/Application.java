@@ -4,6 +4,7 @@ import java.util.*;
 import store.Model.Order;
 import store.Model.OrderItem;
 import store.Model.Products;
+import store.Model.Receipt;
 import store.View.OutputView;
 
 public class Application {
@@ -16,13 +17,16 @@ public class Application {
         outputView.printProducts(products.getProducts());
 
         Order order = new Order();
+        List<OrderItem> orderItems = order.receiveOrder();
 
-        if (products.processOrder(order.receiveOrder())) {
-            System.out.println("주문이 완료되었습니다!");
+        if (products.processOrder(orderItems)) {
+            Receipt receipt = new Receipt();
+            receipt.generateReceipt(orderItems, products);
+            receipt.printReceipt();
         } else { // else 예약어 변경 필요
-            System.out.println("주문이 실패하였습니다.");
+            System.out.println("주문을 완료할 수 없습니다. 재고 부족 혹은 상품 오류가 발생했습니다.");
         }
 
-        outputView.printProducts(products.getProducts());
+//        outputView.printProducts(products.getProducts());
     }
 }

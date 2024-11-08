@@ -37,7 +37,7 @@ public class Products {
         }
     }
 
-    private Optional<Product> findProductByName(String productName) {
+    public Optional<Product> findProductByName(String productName) {
         return products.stream()
                 .filter(p -> p.getName().equals(productName))
                 .findFirst();
