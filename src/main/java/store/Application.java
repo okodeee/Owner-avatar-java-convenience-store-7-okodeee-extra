@@ -1,6 +1,8 @@
 package store;
 
+import java.util.*;
 import store.Model.Order;
+import store.Model.OrderItem;
 import store.Model.Products;
 import store.View.OutputView;
 
@@ -14,6 +16,13 @@ public class Application {
         outputView.printProducts(products.getProducts());
 
         Order order = new Order();
-        order.receiveOrder();
+
+        if (products.processOrder(order.receiveOrder())) {
+            System.out.println("주문이 완료되었습니다!");
+        } else { // else 예약어 변경 필요
+            System.out.println("주문이 실패하였습니다.");
+        }
+
+        outputView.printProducts(products.getProducts());
     }
 }
