@@ -70,7 +70,7 @@ public class OrderProcessor {
                 int get = promotion.getGet();
 
                 // 주문에 대해 프로모션 재고와 일반 재고 사용을 계산
-                PromotionUsage usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(), product.getRegularQuantity(), buy, get, price);
+                PromotionUsage usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(), product.getRegularQuantity(), buy + get, price);
                 product.decreasePromotionQuantity(usage.promotionUsed);
                 product.decreaseRegularQuantity(usage.regularUsed);
                 discountAmount += usage.discount;
@@ -123,26 +123,26 @@ public class OrderProcessor {
     /**
      * 프로모션 재고와 일반 재고를 고려하여 사용량을 계산하는 메서드
      */
-    private PromotionUsage calculatePromotionUsage(int quantity, int promotionStock, int regularStock, int buy, int get, int price) {
+    private PromotionUsage calculatePromotionUsage(int quantity, int promotionQuantity, int regularQuantity, int setQuantity, int price) {
         int requiredPromotionStock = 0;
         int requiredRegularStock = 0;
         int freeItems = 0;
         int discount = 0;
 
         // 최대한 프로모션 혜택을 적용 가능한 세트 수 계산
-        while (quantity >= (buy+get) && promotionStock >= (buy+get)) {
-            quantity -= (buy+get);
-            promotionStock -= (buy+get);
-            freeItems += get;
-            discount += get * price;
-            requiredPromotionStock += (buy+get);
+        while (quantity >= setQuantity && promotionQuantity >= setQuantity) {
+            quantity -= setQuantity;
+            promotionQuantity -= setQuantity;
+            freeItems++;
+            discount += price;
+            requiredPromotionStock += setQuantity;
         }
 
-        if (promotionStock - quantity >= 0) {
-            requiredPromotionStock += promotionStock - quantity;
-        } else if (promotionStock - quantity < 0) {
-            requiredPromotionStock += promotionStock;
-            requiredRegularStock = quantity - promotionStock;
+        if (promotionQuantity - quantity >= 0) {
+            requiredPromotionStock += quantity;
+        } else if (promotionQuantity - quantity < 0) {
+            requiredPromotionStock += promotionQuantity;
+            requiredRegularStock = quantity - promotionQuantity;
         }
 
         return new PromotionUsage(requiredPromotionStock, requiredRegularStock, freeItems, discount, quantity);
