@@ -65,7 +65,7 @@ public class OrderProcessor {
             totalAmount += itemTotalCost;
 
             // 프로모션이 있는 경우
-            if (product.getPromotion().isPresent() && product.getPromotion().get().isActive(LocalDate.now())) {
+            if (product.getPromotion().isPresent()) {
                 Promotion promotion = product.getPromotion().get();
                 int buy = promotion.getBuy();
                 int get = promotion.getGet();

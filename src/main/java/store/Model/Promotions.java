@@ -1,5 +1,6 @@
 package store.Model;
 
+import camp.nextstep.edu.missionutils.DateTimes;
 import java.io.*;
 import java.time.LocalDate;
 import java.util.*;
@@ -22,7 +23,11 @@ public class Promotions {
                 LocalDate startDate = LocalDate.parse(parts[3].trim());
                 LocalDate endDate = LocalDate.parse(parts[4].trim());
 
-                promotions.add(new Promotion(name, buy, get, startDate, endDate));
+                LocalDate date = LocalDate.from(DateTimes.now());
+                if ((date.isEqual(startDate) || date.isAfter(startDate)) &&
+                        (date.isEqual(endDate) || date.isBefore(endDate))) {
+                    promotions.add(new Promotion(name, buy, get, startDate, endDate));
+                }
             }
         } catch (IOException e) {
             System.err.println("Error reading promotion file: " + e.getMessage());

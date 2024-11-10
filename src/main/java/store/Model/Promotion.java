@@ -29,9 +29,4 @@ public class Promotion {
     public int getGet() {
         return get;
     }
-
-    public boolean isActive(LocalDate date) {
-        return (date.isEqual(startDate) || date.isAfter(startDate)) &&
-                (date.isEqual(endDate) || date.isBefore(endDate));
-    }
 }
