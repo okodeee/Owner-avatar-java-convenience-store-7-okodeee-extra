@@ -12,6 +12,7 @@ public class OrderProcessor {
     private int totalQuantity;
     private int totalAmount;      // 총 구매액
     private int discountAmount;    // 총 할인 금액
+    private int membershipDiscountAmount;
     private StringBuilder receiptDetails;
     private StringBuilder giftDetails;
 
@@ -20,6 +21,7 @@ public class OrderProcessor {
         this.totalQuantity = 0;
         this.totalAmount = 0;
         this.discountAmount = 0;
+        this.membershipDiscountAmount = 0;
         this.receiptDetails = new StringBuilder();
         this.giftDetails = new StringBuilder();
     }
@@ -46,6 +48,8 @@ public class OrderProcessor {
     public void processOrder(List<OrderItem> orderItems) {
         receiptDetails.append("==============W 편의점================\n");
         receiptDetails.append(String.format("%-17s %-5s %-8s\n", "상품명", "수량", "금액"));
+
+        int remainingAmountAfterPromotion = 0;
 
         for (OrderItem orderItem : orderItems) {
             Optional<Product> productOpt = products.findProductByName(orderItem.getProductName());
@@ -80,6 +84,7 @@ public class OrderProcessor {
                         totalAmount += price; // 추가된 1개의 가격만큼 총 금액 증가
                     }
                 }
+                remainingAmountAfterPromotion += totalAmount;
 
                 // 주문에 대해 프로모션 재고와 일반 재고 사용을 계산
                 PromotionUsage usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(), product.getRegularQuantity(), buy + get, price);
@@ -103,6 +108,12 @@ public class OrderProcessor {
                         continue;
                     }
                 }
+
+                // 프로모션 적용된 세트 수 계산 후, 해당 금액 제외
+                int setsWithPromotion = usage.freeItems;
+                int promoItems = setsWithPromotion * (buy + get);
+                remainingAmountAfterPromotion -= promoItems * product.getPrice();
+
             } else {
                 // 프로모션이 없는 경우 일반 재고에서 차감
                 if (quantity > product.getRegularQuantity()) {
@@ -110,6 +121,7 @@ public class OrderProcessor {
                     continue;
                 }
                 product.decreaseRegularQuantity(quantity);
+                remainingAmountAfterPromotion += totalAmount;
             }
 
             receiptDetails.append(String.format("%-17s %-5d %,-8d\n", product.getName(), quantity, itemTotalCost));
@@ -120,9 +132,17 @@ public class OrderProcessor {
             receiptDetails.append(giftDetails);
         }
 
+        System.out.print("멤버십 할인을 받으시겠습니까? (Y/N): ");
+        String membershipResponse = Console.readLine().trim().toUpperCase();
+
+        if (membershipResponse.equals("Y")) {
+            membershipDiscountAmount = (int) Math.min(remainingAmountAfterPromotion * 0.3, 8000);
+        }
+
         receiptDetails.append("====================================\n");
         receiptDetails.append(String.format("%-17s %-5d %,-8d\n", "총구매액", totalQuantity, totalAmount));
         receiptDetails.append(String.format("%-23s %,-8d\n", "행사할인", -discountAmount));
+        receiptDetails.append(String.format("%-23s -%,-8d\n", "멤버십할인", -membershipDiscountAmount));
         receiptDetails.append(String.format("%-23s %,-8d\n", "내실돈", totalAmount - discountAmount));
 
         printReceipt();
