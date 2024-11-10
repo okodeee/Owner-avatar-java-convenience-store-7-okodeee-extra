@@ -69,6 +69,18 @@ public class OrderProcessor {
                 int buy = promotion.getBuy();
                 int get = promotion.getGet();
 
+                if (quantity % (buy + get) == buy && (quantity + 1 <= product.getPromotionQuantity())) {
+                    System.out.printf("현재 %s은(는) 1개를 더 구매하시면 %d개를 무료로 받을 수 있습니다. 추가하시겠습니까? (Y/N): ",
+                            product.getName(), get);
+                    String response = Console.readLine().trim().toUpperCase();
+                    if (response.equals("Y")) {
+                        quantity += 1;
+                        itemTotalCost = price * quantity;
+                        totalQuantity += 1;
+                        totalAmount += price; // 추가된 1개의 가격만큼 총 금액 증가
+                    }
+                }
+
                 // 주문에 대해 프로모션 재고와 일반 재고 사용을 계산
                 PromotionUsage usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(), product.getRegularQuantity(), buy + get, price);
                 product.decreasePromotionQuantity(usage.promotionUsed);
