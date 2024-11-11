@@ -6,17 +6,12 @@ import store.Model.Product;
 import store.Model.Products;
 import store.Model.Promotion;
 import store.Model.Promotions;
+import store.Model.Receipt;
 import store.View.InputView;
 import store.View.OutputView;
 
 public class Controller {
     private Products products;
-    private int totalQuantity;
-    private int totalAmount;      // 총 구매액
-    private int discountAmount;    // 총 할인 금액
-    private int membershipDiscountAmount;
-    private StringBuilder receiptDetails;
-    private StringBuilder giftDetails;
     private InputView inputView;
     private OutputView outputView;
 
@@ -26,12 +21,6 @@ public class Controller {
 
         this.products = new Products(promotions);
         products.readProductsFromFile("src/main/resources/products.md");
-        this.totalQuantity = 0;
-        this.totalAmount = 0;
-        this.discountAmount = 0;
-        this.membershipDiscountAmount = 0;
-        this.receiptDetails = new StringBuilder();
-        this.giftDetails = new StringBuilder();
         this.inputView = new InputView();
         this.outputView = new OutputView();
     }
@@ -73,34 +62,22 @@ public class Controller {
 
     // 총 결제 금액 계산 및 영수증 작성 메서드
     public void processOrder(List<OrderItem> orderItems) {
-        totalQuantity = 0;
-        totalAmount = 0;
-        discountAmount = 0;
-        membershipDiscountAmount = 0;
-        receiptDetails.setLength(0); // 기존 영수증 내용 초기화
-        giftDetails.setLength(0);
-
-        receiptDetails.append("\n==============W 편의점================\n");
-        receiptDetails.append(String.format("%-17s %-5s %-8s\n", "상품명", "수량", "금액"));
+        Receipt receipt = new Receipt();
+        receipt.startReceipt();
 
         int remainingAmountAfterPromotion = 0;
-
         for (OrderItem orderItem : orderItems) {
             Optional<Product> productOpt = products.findProductByName(orderItem.getProductName());
 
-            if (productOpt.isEmpty()) {
-                System.out.println("상품 " + orderItem.getProductName() + "을(를) 찾을 수 없습니다.");
-                continue;
-            }
+            if (productOpt.isEmpty()) continue;
 
             Product product = productOpt.get();
             int quantity = orderItem.getQuantity();
             int price = product.getPrice();
             int itemTotalCost = price * quantity;
-            int freeItems = 0;
 
-            totalQuantity += quantity;
-            totalAmount += itemTotalCost;
+            receipt.addTotal(quantity, itemTotalCost);
+
             remainingAmountAfterPromotion += itemTotalCost;
 
             if (product.getPromotion().isPresent()) {
@@ -112,8 +89,8 @@ public class Controller {
                     if (inputView.askPromotionAddition(product.getName(), get)) {
                         quantity += 1;
                         itemTotalCost = price * quantity;
-                        totalQuantity += 1;
-                        totalAmount += price; // 추가된 1개의 가격만큼 총 금액 증가
+                        receipt.addTotal(1, price);
+
                         remainingAmountAfterPromotion += price;
                     }
                 }
@@ -122,53 +99,39 @@ public class Controller {
                 PromotionUsage usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(), product.getRegularQuantity(), buy + get, price);
                 product.decreasePromotionQuantity(usage.promotionUsed);
                 product.decreaseRegularQuantity(usage.regularUsed);
-                discountAmount += usage.discount;
+                receipt.addDiscount(usage.discount);
 
-                // 증정 상품 내역에 추가
                 if (usage.freeItems > 0) {
-                    giftDetails.append(String.format("%-17s %-5d\n", product.getName(), usage.freeItems));
+                    receipt.addGiftItem(product.getName(), usage.freeItems);
                 }
 
                 // 프로모션 적용되지 않은 수량 처리
-                if (usage.nonDiscountedItems > 0) {
-                    if (!inputView.askPartiallyRegularPrice(product.getName(), usage.nonDiscountedItems)) {
-                        System.out.printf("'%s' 상품의 주문이 취소되었습니다.\n", product.getName());
-                        continue;
-                    }
+                if (usage.nonDiscountedItems > 0 && !inputView.askPartiallyRegularPrice(product.getName(), usage.nonDiscountedItems)) {
+                    System.out.printf("'%s' 상품의 주문이 취소되었습니다.\n", product.getName());
+                    continue;
                 }
 
                 // 프로모션 적용된 세트 수 계산 후, 해당 금액 제외
                 int setsWithPromotion = usage.freeItems;
                 int promoItems = setsWithPromotion * (buy + get);
                 remainingAmountAfterPromotion -= promoItems * product.getPrice();
-
             } else {
                 // 프로모션이 없는 경우 일반 재고에서 차감
                 if (quantity > product.getRegularQuantity()) {
-                    System.out.println("일반 재고가 부족하여 주문을 처리할 수 없습니다.");
+                    System.out.println("[ERROR] 일반 재고가 부족하여 주문을 처리할 수 없습니다.");
                     continue;
                 }
                 product.decreaseRegularQuantity(quantity);
+                receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
             }
-            receiptDetails.append(String.format("%-17s %-5d %,-8d\n", product.getName(), quantity, itemTotalCost));
-        }
-
-        if (giftDetails.length() > 0) {
-            receiptDetails.append("=============증     정===============\n");
-            receiptDetails.append(giftDetails);
         }
 
         if (inputView.askMembershipDiscount()) {
-            membershipDiscountAmount = (int) Math.min(remainingAmountAfterPromotion * 0.3, 8000);
+            receipt.applyMembershipDiscount(remainingAmountAfterPromotion);
         }
 
-        receiptDetails.append("====================================\n");
-        receiptDetails.append(String.format("%-17s %-5d %,-8d\n", "총구매액", totalQuantity, totalAmount));
-        receiptDetails.append(String.format("%-23s %,-8d\n", "행사할인", -discountAmount));
-        receiptDetails.append(String.format("%-23s -%,-8d\n", "멤버십할인", membershipDiscountAmount));
-        receiptDetails.append(String.format("%-23s %,-8d", "내실돈", totalAmount - discountAmount));
-
-        outputView.printReceipt(receiptDetails);
+        receipt.finalizeReceipt();
+        outputView.printReceipt(receipt.getReceiptDetails());
     }
 
     /**
