@@ -1,9 +1,6 @@
 package store.Controller;
 
-import camp.nextstep.edu.missionutils.Console;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import store.Model.OrderItem;
 import store.Model.Product;
 import store.Model.Products;
@@ -43,10 +40,29 @@ public class Controller {
         do {
             outputView.printProducts(products.getProducts());
 
-            List<OrderItem> orderItems = inputView.getOrderItems();
+            List<OrderItem> orderItems;
+            while (true) {
+                orderItems = inputView.getOrderItems();
+
+                if (validateOrderItems(orderItems)) {
+                    break;
+                }
+            }
             processOrder(orderItems);
 
         } while (inputView.askAdditionalOrder());
+    }
+
+    private boolean validateOrderItems(List<OrderItem> orderItems) {
+        for (OrderItem orderItem : orderItems) {
+            Optional<Product> productOpt = products.findProductByName(orderItem.getProductName());
+
+            if (productOpt.isEmpty()) {
+                System.out.println("[ERROR] 존재하지 않는 상품입니다. 다시 입력해 주세요.");
+                return false;
+            }
+        }
+        return true;
     }
 
     // 총 결제 금액 계산 및 영수증 작성 메서드
