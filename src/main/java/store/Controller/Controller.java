@@ -20,7 +20,8 @@ public class Controller {
     private int membershipDiscountAmount;
     private StringBuilder receiptDetails;
     private StringBuilder giftDetails;
-    private InputView inputView = new InputView();
+    private InputView inputView;
+    private OutputView outputView;
 
     public Controller() {
         Promotions promotions = new Promotions();
@@ -34,12 +35,12 @@ public class Controller {
         this.membershipDiscountAmount = 0;
         this.receiptDetails = new StringBuilder();
         this.giftDetails = new StringBuilder();
+        this.inputView = new InputView();
+        this.outputView = new OutputView();
     }
 
     public void run() {
         do {
-            System.out.println("안녕하세요. W편의점입니다.\n현재 보유하고 있는 상품입니다.\n");
-            OutputView outputView = new OutputView();
             outputView.printProducts(products.getProducts());
 
             List<OrderItem> orderItems = inputView.getOrderItems();
@@ -145,11 +146,7 @@ public class Controller {
         receiptDetails.append(String.format("%-23s -%,-8d\n", "멤버십할인", membershipDiscountAmount));
         receiptDetails.append(String.format("%-23s %,-8d\n", "내실돈", totalAmount - discountAmount));
 
-        printReceipt();
-    }
-
-    public void printReceipt() {
-        System.out.println(receiptDetails.toString());
+        outputView.printReceipt(receiptDetails);
     }
 
     /**
