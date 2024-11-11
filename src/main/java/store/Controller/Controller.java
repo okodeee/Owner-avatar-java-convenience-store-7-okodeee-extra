@@ -111,6 +111,8 @@ public class Controller {
                     continue;
                 }
 
+                receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
+
                 // 프로모션 적용된 세트 수 계산 후, 해당 금액 제외
                 int setsWithPromotion = usage.freeItems;
                 int promoItems = setsWithPromotion * (buy + get);
