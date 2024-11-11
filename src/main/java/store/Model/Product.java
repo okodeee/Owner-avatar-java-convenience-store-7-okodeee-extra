@@ -27,6 +27,7 @@ public class Product {
     public int getRegularQuantity() { return regularQuantity; }
     public int getPromotionQuantity() { return promotionQuantity; }
     public Optional<Promotion> getPromotion() { return Optional.ofNullable(promotion); }
+    public int getAvailableQuantity() { return regularQuantity + promotionQuantity; }
 
     public void increaseRegularQuantity(int quantity) {
         this.regularQuantity += quantity;
