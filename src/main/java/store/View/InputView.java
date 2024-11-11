@@ -6,20 +6,28 @@ import java.util.*;
 
 public class InputView {
     public List<OrderItem> getOrderItems() {
-        System.out.println("\n구매하실 상품명과 수량을 입력해 주세요. (예: [사이다-2],[감자칩-1])");
-        String inputOrder = Console.readLine();
-
         List<OrderItem> orderItems = new ArrayList<>();
-        inputOrder = inputOrder.replace("[", "").replace("]", "");
-        String[] items = inputOrder.split(",");
 
-        for (String item : items) {
-            String[] parts = item.split("-");
-            String productName = parts[0].trim();
-            int quantity = Integer.parseInt(parts[1].trim());
-            orderItems.add(new OrderItem(productName, quantity));
+        while (true) {
+            System.out.println("\n구매하실 상품명과 수량을 입력해 주세요. (예: [사이다-2],[감자칩-1])");
+            String inputOrder = Console.readLine();
+
+            try {
+                orderItems.clear();
+                inputOrder = inputOrder.replace("[", "").replace("]", "");
+                String[] items = inputOrder.split(",");
+
+                for (String item : items) {
+                    String[] parts = item.split("-");
+                    String productName = parts[0].trim();
+                    int quantity = Integer.parseInt(parts[1].trim());
+                    orderItems.add(new OrderItem(productName, quantity));
+                }
+                return orderItems;
+            } catch (Exception e) {
+                System.out.println("[ERROR] 올바르지 않은 형식으로 입력했습니다. 다시 입력해 주세요.");
+            }
         }
-        return orderItems;
     }
 
     public boolean askPromotionAddition(String productName, int additionalQuantity) {
