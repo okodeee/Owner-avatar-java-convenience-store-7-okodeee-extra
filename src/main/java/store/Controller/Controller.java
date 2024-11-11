@@ -20,6 +20,7 @@ public class Controller {
     private int membershipDiscountAmount;
     private StringBuilder receiptDetails;
     private StringBuilder giftDetails;
+    private InputView inputView = new InputView();
 
     public Controller() {
         Promotions promotions = new Promotions();
@@ -41,29 +42,10 @@ public class Controller {
             OutputView outputView = new OutputView();
             outputView.printProducts(products.getProducts());
 
-            List<OrderItem> orderItems = receiveOrder();
+            List<OrderItem> orderItems = inputView.getOrderItems();
             processOrder(orderItems);
 
-            System.out.print("감사합니다. 구매하고 싶은 다른 상품이 있나요? (Y/N): ");
-        } while (Console.readLine().trim().toUpperCase().equals("Y"));
-    }
-
-    // 사용자 입력을 받아 주문 목록 생성
-    public List<OrderItem> receiveOrder() {
-        InputView inputView = new InputView();
-        String inputOrder = inputView.readOrder();
-
-        List<OrderItem> orderItems = new ArrayList<>();
-        inputOrder = inputOrder.replace("[", "").replace("]", "");
-        String[] items = inputOrder.split(",");
-
-        for (String item : items) {
-            String[] parts = item.split("-");
-            String productName = parts[0].trim();
-            int quantity = Integer.parseInt(parts[1].trim());
-            orderItems.add(new OrderItem(productName, quantity));
-        }
-        return orderItems;
+        } while (inputView.askAdditionalOrder());
     }
 
     // 총 결제 금액 계산 및 영수증 작성 메서드
@@ -104,10 +86,7 @@ public class Controller {
                 int get = promotion.getGet();
 
                 if (quantity % (buy + get) == buy && (quantity + 1 <= product.getPromotionQuantity())) {
-                    System.out.printf("현재 %s은(는) 1개를 더 구매하시면 %d개를 무료로 받을 수 있습니다. 추가하시겠습니까? (Y/N): ",
-                            product.getName(), get);
-                    String response = Console.readLine().trim().toUpperCase();
-                    if (response.equals("Y")) {
+                    if (inputView.askPromotionAddition(product.getName(), get)) {
                         quantity += 1;
                         itemTotalCost = price * quantity;
                         totalQuantity += 1;
@@ -129,11 +108,7 @@ public class Controller {
 
                 // 프로모션 적용되지 않은 수량 처리
                 if (usage.nonDiscountedItems > 0) {
-                    System.out.printf("현재 %s %d개는 프로모션 할인이 적용되지 않습니다. 그래도 구매하시겠습니까? (Y/N): ",
-                            product.getName(), usage.nonDiscountedItems);
-                    String response = Console.readLine().trim().toUpperCase();
-
-                    if (!response.equals("Y")) {
+                    if (!inputView.askPartiallyRegularPrice(product.getName(), usage.nonDiscountedItems)) {
                         System.out.printf("'%s' 상품의 주문이 취소되었습니다.\n", product.getName());
                         continue;
                     }
@@ -160,10 +135,7 @@ public class Controller {
             receiptDetails.append(giftDetails);
         }
 
-        System.out.print("멤버십 할인을 받으시겠습니까? (Y/N): ");
-        String membershipResponse = Console.readLine().trim().toUpperCase();
-
-        if (membershipResponse.equals("Y")) {
+        if (inputView.askMembershipDiscount()) {
             membershipDiscountAmount = (int) Math.min(remainingAmountAfterPromotion * 0.3, 8000);
         }
 
