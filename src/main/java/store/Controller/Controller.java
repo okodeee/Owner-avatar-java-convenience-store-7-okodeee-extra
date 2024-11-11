@@ -1,13 +1,18 @@
-package store.Model;
+package store.Controller;
 
 import camp.nextstep.edu.missionutils.Console;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import store.Model.OrderItem;
+import store.Model.Product;
+import store.Model.Products;
+import store.Model.Promotion;
+import store.Model.Promotions;
 import store.View.InputView;
+import store.View.OutputView;
 
-public class OrderProcessor {
+public class Controller {
     private Products products;
     private int totalQuantity;
     private int totalAmount;      // 총 구매액
@@ -16,14 +21,31 @@ public class OrderProcessor {
     private StringBuilder receiptDetails;
     private StringBuilder giftDetails;
 
-    public OrderProcessor(Products products) {
-        this.products = products;
+    public Controller() {
+        Promotions promotions = new Promotions();
+        promotions.readPromotionsFromFile("src/main/resources/promotions.md");
+
+        this.products = new Products(promotions);
+        products.readProductsFromFile("src/main/resources/products.md");
         this.totalQuantity = 0;
         this.totalAmount = 0;
         this.discountAmount = 0;
         this.membershipDiscountAmount = 0;
         this.receiptDetails = new StringBuilder();
         this.giftDetails = new StringBuilder();
+    }
+
+    public void run() {
+        do {
+            System.out.println("안녕하세요. W편의점입니다.\n현재 보유하고 있는 상품입니다.\n");
+            OutputView outputView = new OutputView();
+            outputView.printProducts(products.getProducts());
+
+            List<OrderItem> orderItems = receiveOrder();
+            processOrder(orderItems);
+
+            System.out.print("감사합니다. 구매하고 싶은 다른 상품이 있나요? (Y/N): ");
+        } while (Console.readLine().trim().toUpperCase().equals("Y"));
     }
 
     // 사용자 입력을 받아 주문 목록 생성
@@ -46,6 +68,13 @@ public class OrderProcessor {
 
     // 총 결제 금액 계산 및 영수증 작성 메서드
     public void processOrder(List<OrderItem> orderItems) {
+        totalQuantity = 0;
+        totalAmount = 0;
+        discountAmount = 0;
+        membershipDiscountAmount = 0;
+        receiptDetails.setLength(0); // 기존 영수증 내용 초기화
+        giftDetails.setLength(0);
+
         receiptDetails.append("==============W 편의점================\n");
         receiptDetails.append(String.format("%-17s %-5s %-8s\n", "상품명", "수량", "금액"));
 
