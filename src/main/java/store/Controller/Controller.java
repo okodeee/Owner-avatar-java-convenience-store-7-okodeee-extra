@@ -58,7 +58,7 @@ public class Controller {
         receiptDetails.setLength(0); // 기존 영수증 내용 초기화
         giftDetails.setLength(0);
 
-        receiptDetails.append("==============W 편의점================\n");
+        receiptDetails.append("\n==============W 편의점================\n");
         receiptDetails.append(String.format("%-17s %-5s %-8s\n", "상품명", "수량", "금액"));
 
         int remainingAmountAfterPromotion = 0;
@@ -144,7 +144,7 @@ public class Controller {
         receiptDetails.append(String.format("%-17s %-5d %,-8d\n", "총구매액", totalQuantity, totalAmount));
         receiptDetails.append(String.format("%-23s %,-8d\n", "행사할인", -discountAmount));
         receiptDetails.append(String.format("%-23s -%,-8d\n", "멤버십할인", membershipDiscountAmount));
-        receiptDetails.append(String.format("%-23s %,-8d\n", "내실돈", totalAmount - discountAmount));
+        receiptDetails.append(String.format("%-23s %,-8d", "내실돈", totalAmount - discountAmount));
 
         outputView.printReceipt(receiptDetails);
     }
