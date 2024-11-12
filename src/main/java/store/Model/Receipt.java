@@ -3,7 +3,7 @@ package store.Model;
 public class Receipt {
     private int totalQuantity;
     private int totalAmount;
-    private int discountAmount;
+    private int promotionDiscountAmount;
     private int membershipDiscountAmount;
     private StringBuilder receiptDetails;
     private StringBuilder giftDetails;
@@ -11,7 +11,7 @@ public class Receipt {
     public Receipt() {
         this.totalQuantity = 0;
         this.totalAmount = 0;
-        this.discountAmount = 0;
+        this.promotionDiscountAmount = 0;
         this.membershipDiscountAmount = 0;
         this.receiptDetails = new StringBuilder();
         this.giftDetails = new StringBuilder();
@@ -31,8 +31,8 @@ public class Receipt {
         receiptDetails.append(String.format("%-17s %-5d %,-8d\n", productName, quantity, itemTotalCost));
     }
 
-    public void addDiscount(int discount) {
-        discountAmount += discount;
+    public void addPromotionDiscount(int discount) {
+        promotionDiscountAmount += discount;
     }
 
     public void addGiftItem(String productName, int quantity) {
@@ -51,9 +51,9 @@ public class Receipt {
 
         receiptDetails.append("====================================\n");
         receiptDetails.append(String.format("%-17s %-5d %,-8d\n", "총구매액", totalQuantity, totalAmount));
-        receiptDetails.append(String.format("%-23s %,-8d\n", "행사할인", -discountAmount));
+        receiptDetails.append(String.format("%-23s %,-8d\n", "행사할인", -promotionDiscountAmount));
         receiptDetails.append(String.format("%-23s -%,-8d\n", "멤버십할인", membershipDiscountAmount));
-        receiptDetails.append(String.format("%-23s %,-8d\n", "내실돈", totalAmount - discountAmount - membershipDiscountAmount));
+        receiptDetails.append(String.format("%-23s %,-8d\n", "내실돈", totalAmount - promotionDiscountAmount - membershipDiscountAmount));
     }
 
     public StringBuilder getReceiptDetails() {

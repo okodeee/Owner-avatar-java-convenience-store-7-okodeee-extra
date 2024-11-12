@@ -30,12 +30,9 @@ public class Controller {
             outputView.printProducts(products.getProducts());
 
             List<OrderItem> orderItems;
-            while (true) {
+            do {
                 orderItems = inputView.getOrderItems();
-                if (validateOrderItems(orderItems)) {
-                    break;
-                }
-            }
+            } while (!validateOrderItems(orderItems));
 
             processOrder(orderItems);
         } while (inputView.askAdditionalOrder());
@@ -90,11 +87,10 @@ public class Controller {
 
         if (product.getPromotion().isPresent()) {
             return processPromotionOrderItem(product, receipt, quantity, price);
-        } else {
-            product.decreaseRegularQuantity(quantity);
-            receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
-            receipt.addTotal(quantity, itemTotalCost);
         }
+        product.decreaseRegularQuantity(quantity);
+        receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
+        receipt.addTotal(quantity, itemTotalCost);
         return itemTotalCost;
     }
 
@@ -115,10 +111,6 @@ public class Controller {
                 product.getRegularQuantity(), buy + get,
                 price);
 
-        if (usage.freeItems > 0) {
-            receipt.addGiftItem(product.getName(), usage.freeItems);
-        }
-
         // 프로모션 적용되지 않은 수량 처리
         if (usage.nonDiscountedItems > 0) {
             if (!inputView.askPartiallyRegularPrice(product.getName(), usage.nonDiscountedItems)) {
@@ -134,8 +126,11 @@ public class Controller {
         product.decreaseRegularQuantity(usage.regularUsed);
         int itemTotalCost = price * quantity;
         receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
+        if (usage.freeItems > 0) {
+            receipt.addGiftItem(product.getName(), usage.freeItems);
+            receipt.addPromotionDiscount(usage.discount);
+        }
         receipt.addTotal(quantity, itemTotalCost);
-        receipt.addDiscount(usage.discount);
 
         // 프로모션 적용된 세트 수 계산 후, 해당 금액 제외
         return itemTotalCost - price * usage.freeItems * (buy + get);
