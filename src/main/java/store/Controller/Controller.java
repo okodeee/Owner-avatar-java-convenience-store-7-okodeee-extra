@@ -32,7 +32,9 @@ public class Controller {
             List<OrderItem> orderItems;
             while (true) {
                 orderItems = inputView.getOrderItems();
-                if (validateOrderItems(orderItems)) break;
+                if (validateOrderItems(orderItems)) {
+                    break;
+                }
             }
 
             processOrder(orderItems);
@@ -61,50 +63,46 @@ public class Controller {
         Receipt receipt = new Receipt();
         receipt.startReceipt();
 
-        int remainingAmountAfterPromotion = 0;
+        int amountAfterPromotion = 0;
         for (OrderItem orderItem : orderItems) {
             Optional<Product> productOpt = products.findProductByName(orderItem.getProductName());
 
-            if (productOpt.isEmpty()) continue;
+            if (productOpt.isEmpty()) {
+                continue;
+            }
 
             Product product = productOpt.get();
-            remainingAmountAfterPromotion = processOrderItem(orderItem, product, receipt,
-                    remainingAmountAfterPromotion);
+            amountAfterPromotion = processOrderItem(orderItem, product, receipt);
         }
 
         if (inputView.askMembershipDiscount()) {
-            receipt.applyMembershipDiscount(remainingAmountAfterPromotion);
+            receipt.applyMembershipDiscount(amountAfterPromotion);
         }
 
         receipt.finalizeReceipt();
         outputView.printReceipt(receipt.getReceiptDetails());
     }
 
-    private int processOrderItem(OrderItem orderItem, Product product, Receipt receipt,
-                                                 int remainingAmountAfterPromotion) {
+    private int processOrderItem(OrderItem orderItem, Product product, Receipt receipt) {
         int quantity = orderItem.getQuantity();
         int price = product.getPrice();
         int itemTotalCost = price * quantity;
-
-        receipt.addTotal(quantity, itemTotalCost);
-        remainingAmountAfterPromotion += itemTotalCost;
+        int amountAfterPromotion = itemTotalCost;
 
         if (product.getPromotion().isPresent()) {
-            return processPromotionOrderItem(product, receipt, remainingAmountAfterPromotion, quantity, itemTotalCost, price);
+            return processPromotionOrderItem(product, receipt, amountAfterPromotion, quantity, itemTotalCost,
+                    price);
         } else {
-            // 프로모션이 없는 경우 일반 재고에서 차감
-            if (quantity > product.getRegularQuantity()) {
-                System.out.println("[ERROR] 일반 재고가 부족하여 주문을 처리할 수 없습니다.");
-                return remainingAmountAfterPromotion;
-            }
             product.decreaseRegularQuantity(quantity);
             receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
+            receipt.addTotal(quantity, itemTotalCost);
         }
-        return remainingAmountAfterPromotion;
+        return amountAfterPromotion;
     }
 
-    private int processPromotionOrderItem(Product product, Receipt receipt, int remainingAmountAfterPromotion, int quantity,
-                          int itemTotalCost, int price) {
+    private int processPromotionOrderItem(Product product, Receipt receipt, int remainingAmountAfterPromotion,
+                                          int quantity,
+                                          int itemTotalCost, int price) {
         Promotion promotion = product.getPromotion().get();
         int buy = promotion.getBuy();
         int get = promotion.getGet();
@@ -119,7 +117,8 @@ public class Controller {
         }
 
         // 주문에 대해 프로모션 재고와 일반 재고 사용을 계산
-        PromotionUsage usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(), product.getRegularQuantity(), buy + get,
+        PromotionUsage usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(),
+                product.getRegularQuantity(), buy + get,
                 price);
         product.decreasePromotionQuantity(usage.promotionUsed);
         product.decreaseRegularQuantity(usage.regularUsed);
@@ -130,25 +129,32 @@ public class Controller {
         }
 
         // 프로모션 적용되지 않은 수량 처리
-        if (usage.nonDiscountedItems > 0 && !inputView.askPartiallyRegularPrice(product.getName(), usage.nonDiscountedItems)) {
-            System.out.printf("'%s' 상품의 주문이 취소되었습니다.\n", product.getName());
+        if (usage.nonDiscountedItems > 0) {
+            if (!inputView.askPartiallyRegularPrice(product.getName(), usage.nonDiscountedItems)) {
+                quantity -= usage.nonDiscountedItems;
+                itemTotalCost = price * quantity;
+                System.out.printf("%s %d개만 구매합니다.\n", product.getName(), quantity);
+                receipt.addTotal(-usage.nonDiscountedItems, -price * usage.nonDiscountedItems);
+                receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
+                remainingAmountAfterPromotion -= usage.nonDiscountedItems * price;
+                return remainingAmountAfterPromotion;
+            }
+            receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
             return remainingAmountAfterPromotion;
         }
-
-        receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
-
         // 프로모션 적용된 세트 수 계산 후, 해당 금액 제외
+        receipt.addItemToReceipt(product.getName(), quantity, itemTotalCost);
         int setsWithPromotion = usage.freeItems;
         int promoItems = setsWithPromotion * (buy + get);
         remainingAmountAfterPromotion -= promoItems * product.getPrice();
-
         return remainingAmountAfterPromotion;
     }
 
     /**
      * 프로모션 재고와 일반 재고를 고려하여 사용량을 계산하는 메서드
      */
-    private PromotionUsage calculatePromotionUsage(int quantity, int promotionQuantity, int regularQuantity, int setQuantity, int price) {
+    private PromotionUsage calculatePromotionUsage(int quantity, int promotionQuantity, int regularQuantity,
+                                                   int setQuantity, int price) {
         int requiredPromotionStock = 0;
         int requiredRegularStock = 0;
         int freeItems = 0;
