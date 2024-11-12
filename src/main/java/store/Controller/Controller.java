@@ -122,8 +122,10 @@ public class Controller {
         // 프로모션 적용되지 않은 수량 처리
         if (usage.nonDiscountedItems > 0) {
             if (!inputView.askPartiallyRegularPrice(product.getName(), usage.nonDiscountedItems)) {
-                // 프로모션 미적용 상품 뺌
                 quantity -= usage.nonDiscountedItems;
+                usage = calculatePromotionUsage(quantity, product.getPromotionQuantity(),
+                        product.getRegularQuantity(), buy + get,
+                        price);
                 System.out.printf("%s %d개만 구매합니다.\n", product.getName(), quantity);
             }
         }
